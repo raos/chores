@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 from datetime import date, timedelta
 from db.queries.chore_instances import get_instances_for_week, get_instances_for_date
 from logic.wallet import mark_done_by_child, reset_chore
@@ -84,12 +85,17 @@ def _render_week_view(child_id: int):
         is_today = current_day == today
 
         with col:
-            header_style = "**" if is_today else ""
-            day_label = current_day.strftime("%a\n%d")
             if is_today:
-                st.markdown(f"**:blue[{current_day.strftime('%a')}]**\n\n**:blue[{current_day.strftime('%d')}]**")
+                st.markdown('<div id="today-col"></div>', unsafe_allow_html=True)
+                st.markdown(
+                    f"**:blue[{current_day.strftime('%a')}]**"
+                    f"\n\n**:blue[{current_day.strftime('%d')}]**"
+                )
             else:
-                st.markdown(f"**{current_day.strftime('%a')}**\n\n{current_day.strftime('%d')}")
+                st.markdown(
+                    f"**{current_day.strftime('%a')}**"
+                    f"\n\n{current_day.strftime('%d')}"
+                )
 
             if st.button("View", key=f"view_day_{day_str}", use_container_width=True):
                 st.session_state.calendar_view = "day"
@@ -100,9 +106,35 @@ def _render_week_view(child_id: int):
             if day_instances:
                 for inst in day_instances:
                     emoji = STATUS_COLOR.get(inst["status"], "⬜")
-                    st.caption(f"{emoji} {inst['title']}")
+                    # Truncate long titles so they fit in the narrow column
+                    title = inst["title"]
+                    if len(title) > 11:
+                        title = title[:10] + "…"
+                    st.caption(f"{emoji} {title}")
             else:
                 st.caption("—")
+
+    # On mobile, auto-scroll the week row so today's column is centred
+    components.html(
+        """
+        <script>
+        setTimeout(function () {
+            try {
+                var doc = window.parent.document;
+                var anchor = doc.getElementById('today-col');
+                if (!anchor) return;
+                var col = anchor.closest('[data-testid="column"]');
+                var scroller = anchor.closest('[data-testid="stHorizontalBlock"]');
+                if (col && scroller) {
+                    scroller.scrollLeft =
+                        col.offsetLeft - scroller.clientWidth / 2 + col.offsetWidth / 2;
+                }
+            } catch (e) {}
+        }, 120);
+        </script>
+        """,
+        height=0,
+    )
 
 
 def _render_day_view(child_id: int):

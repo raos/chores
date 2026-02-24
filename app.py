@@ -7,6 +7,106 @@ from logic.recurrence import ensure_instances_for_window
 from ui.auth_gate import render_auth_gate
 
 
+_MOBILE_CSS = """
+<style>
+/* ── Touch targets ──────────────────────────────────────────────────────────
+   Give every button a comfortable minimum tap height on all screen sizes.   */
+.stButton > button,
+.stFormSubmitButton > button {
+    min-height: 2.75rem;
+}
+
+/* ── Compact sidebar ────────────────────────────────────────────────────────
+   Cap sidebar width so it doesn't crowd the viewport on small tablets.      */
+@media (max-width: 768px) {
+    [data-testid="stSidebar"] > div:first-child {
+        width: 240px !important;
+        min-width: 240px !important;
+    }
+}
+
+/* ── Main content padding ───────────────────────────────────────────────────
+   Streamlit's default side-padding is generous; tighten it on phones.       */
+@media (max-width: 768px) {
+    .main .block-container {
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+        padding-top: 0.75rem !important;
+        max-width: 100% !important;
+    }
+}
+
+/* ── Heading scale ──────────────────────────────────────────────────────────
+   Large headings overflow on small screens; scale them down.                */
+@media (max-width: 480px) {
+    h1 { font-size: 1.5rem !important; }
+    h2 { font-size: 1.25rem !important; }
+    h3 { font-size: 1.1rem !important; }
+}
+
+/* ── Metric cards ───────────────────────────────────────────────────────────
+   Tighten internal padding so three metrics fit side-by-side on phones.     */
+@media (max-width: 640px) {
+    [data-testid="stMetric"] {
+        padding: 0.4rem 0.5rem !important;
+    }
+    [data-testid="stMetricLabel"] p {
+        font-size: 0.75rem !important;
+    }
+    [data-testid="stMetricValue"] {
+        font-size: 1.1rem !important;
+    }
+}
+
+/* ── Week calendar: horizontal scroll ──────────────────────────────────────
+   The 7-column week grid is too narrow to render vertically on a phone.
+   Make it scroll horizontally instead, with a fixed minimum column width.
+   :has(> column:nth-child(7)) targets only the 7-col block, leaving all
+   other multi-column layouts untouched.
+   :has() is supported on Safari 15.4+, Chrome 105+, Firefox 121+.          */
+@media (max-width: 768px) {
+    [data-testid="stHorizontalBlock"]:has(
+        > [data-testid="column"]:nth-child(7)
+    ) {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        flex-wrap: nowrap !important;
+        scroll-snap-type: x proximity;
+        gap: 2px !important;
+        padding-bottom: 6px !important;
+    }
+
+    [data-testid="stHorizontalBlock"]:has(
+        > [data-testid="column"]:nth-child(7)
+    ) > [data-testid="column"] {
+        flex: 0 0 108px !important;
+        min-width: 108px !important;
+        scroll-snap-align: start;
+    }
+}
+
+/* ── Tab bar ────────────────────────────────────────────────────────────────
+   Enlarge tab touch targets and allow horizontal scroll if tabs overflow.   */
+@media (max-width: 768px) {
+    [data-testid="stTabs"] [data-testid="stTabBar"] {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+    button[data-baseweb="tab"] {
+        min-height: 2.75rem !important;
+        padding: 0.5rem 0.75rem !important;
+        font-size: 0.85rem !important;
+        white-space: nowrap !important;
+    }
+}
+</style>
+"""
+
+
+def _inject_mobile_css():
+    st.markdown(_MOBILE_CSS, unsafe_allow_html=True)
+
+
 def _bootstrap():
     """Run once per session: DB init, sweep missed chores, expand instances."""
     if st.session_state.get("_bootstrapped"):
@@ -65,6 +165,7 @@ def main():
         initial_sidebar_state="expanded",
     )
 
+    _inject_mobile_css()
     _bootstrap()
     render_auth_gate()
 
